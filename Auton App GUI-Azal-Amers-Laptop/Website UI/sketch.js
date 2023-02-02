@@ -4,13 +4,14 @@ let dragging = false;
 let dragIndex = -1;
 let boxX, boxY;
 let index = 0;
-let speed = .025;
+let speed = .0125;
 let step = 0;
 let lineIndex = 0;
 let pathLength = 0;
 let boxwidth=50;
 boxheight = 50;
 weight = 3
+let globalRotate;
 let robotCodeArray = [];
 let pxInchesConstant;
 function radians_to_degrees(radians)
@@ -35,7 +36,14 @@ function outputVectorArray(linePoints,length){
             var deltaY = linePoints[i].y - linePoints[i + 1].y;
             var magnitude = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
             var angle = radians_to_degrees(Math.atan2(deltaY, deltaX));
-            robotVectors.push([magnitude, angle]);
+            var rotationType = linePoints[i].state
+            if(rotationType == -1){
+                rotationType = "R"
+            }
+            else{
+                rotationType = 'S'
+            }
+            robotVectors.push([magnitude, angle,rotationType]);
         
             
         }
@@ -46,6 +54,10 @@ function outputVectorArray(linePoints,length){
     }
     
     return robotVectors
+}
+function printInstruction(){
+
+    setTimeout(()=>{console.log(robotCodeArray)},1000)
 }
 function vectorConvert(pointArray) {
     let vectorArray = [];
@@ -80,13 +92,20 @@ function calculatePosition(points, t) {
     else{
         let x = lerp(start.x, end.x, t);
     let y = lerp(start.y, end.y, t);
-    if (end.state = -1 ){
+    if (start.state == -1){
+        // If the start points is red, then have it hold some rotation
         if(i>=robotCodeArray.length){
             i = robotCodeArray.length-1
 
         }
         rotate = robotCodeArray[i][1]
-
+        globalRotate = rotate
+    }
+    else{
+        if(i!=0){
+            rotate = globalRotate
+        }
+        
     }
 
     
@@ -98,21 +117,24 @@ function calculatePosition(points, t) {
 }
 function setup() {
     fieldImg = loadImage("field.png");
-  createCanvas(600, 600);
+  canvas1 = createCanvas(600, 600);
+    canvas1.parent("canvas-container")
     pxInchesConstant=width/(144)
   let button = createButton("Delete All");
-  button.position(610, 10);
+//   button.position(610, 10);
+  button.parent("button")
   button.mousePressed(deleteAll);
-  let boxzbutton = createButton("update Bot Size");
-  boxzbutton.position(610, 50);
-  boxzbutton.mousePressed(updateWidth);
+  let boxzbutton = createButton("Log Instructions");
+//   boxzbutton.position(610, 50);
+  boxzbutton.parent("button")
+  boxzbutton.mousePressed(printInstruction);
   
   let widthInput = createInput();
-    // widthInput.parent("sketch-holder");
+    widthInput.parent("textbox1");
     widthInput.input(updateWidth);
 
     let heightInput = createInput();
-    // heightInput.parent("sketch-holder");
+    heightInput.parent("textbox2");
     heightInput.input(updateHeight);
 
 }
@@ -152,15 +174,23 @@ function draw() {
     }
     let pos;
     if(points.length>1){ 
-        pos = calculatePosition(vectors, step);
+        pos = calculatePosition(points, step);
     }
 
     
     
     fill(255, 0, 0);
-    console.log(pos[1])
     // rotate(rotate, angleMode = 'DEGREES')
-    rect(pos[0].x - boxheight/2, pos[0].y - boxwidth/2, Number(boxheight), Number(boxwidth));
+    push();
+    translate(pos[0].x , pos[0].y )
+    rotate(radians(pos[1]))
+
+    rect(-boxheight/2,-boxwidth/2, Number(boxheight), Number(boxwidth));
+    fill(0)
+    stroke(0)
+    rect(-boxheight/2-5,-boxwidth/2,10,10)
+    rect(-boxheight/2,boxwidth/2-5,10,10)
+    pop();
 
     step += speed;
     if (step > 1) {
@@ -238,11 +268,10 @@ function addPoint() {
   points.push({
     x: mouseX,
     y: mouseY,
-    state: 1
+    state: -1
   });
   robotCodeArray = outputVectorArray(points,points.length)
 }
-
 function deletePoint() {
     vectors = vectorConvert(points)
     
