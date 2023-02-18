@@ -1,0 +1,76 @@
+//ROAD WALKER FUNCTIONS//
+public void encoderDrive(double speed, double MoveIN, boolean strafe, double timeoutS, boolean sleep) {
+    int newMoveTarget;
+
+    if (opModeIsActive()) {
+        runtime.reset();
+        FL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        FR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        BL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        BR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        FL.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        FR.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        BL.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        BR.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        newMoveTarget = FL.getCurrentPosition() + (int) (MoveIN * COUNTS_PER_INCH);
+        if (!strafe) {
+            FL.setTargetPosition(newMoveTarget);
+            FR.setTargetPosition(newMoveTarget);
+            BL.setTargetPosition(newMoveTarget);
+            BR.setTargetPosition(newMoveTarget);
+
+            FL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            FR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            BL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            BR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+            runtime.reset();
+            FL.setPower(Math.abs(speed));
+            FR.setPower(Math.abs(speed));
+            BL.setPower(Math.abs(speed));
+            BR.setPower(Math.abs(speed));
+        } else {
+            FL.setTargetPosition(newMoveTarget);
+            FR.setTargetPosition(-newMoveTarget);
+            BL.setTargetPosition(-newMoveTarget);
+            BR.setTargetPosition(newMoveTarget);
+
+            FL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            FR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            BL.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+            BR.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+
+            runtime.reset();
+            FL.setPower(Math.abs(speed));
+            FR.setPower(Math.abs(speed));
+            BL.setPower(Math.abs(speed));
+            BR.setPower(Math.abs(speed));
+        }
+
+        while (opModeIsActive() && (runtime.seconds() < timeoutS) && (FL.isBusy() && FR.isBusy() && BL.isBusy() && BR.isBusy())) {
+            telemetry.addData("Running to", " %7d", newMoveTarget);
+            telemetry.addData("Currently at", " at %7d :%7d :%7d :%7d", FL.getCurrentPosition(), FR.getCurrentPosition(), BL.getCurrentPosition(), BR.getCurrentPosition());
+            telemetry.update();
+        }
+
+        FL.setPower(0);
+        FR.setPower(0);
+        BL.setPower(0);
+        BR.setPower(0);
+
+        FL.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        FR.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        BL.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        BR.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
+        if (sleep) {
+            sleep(100);
+        }
+    }
+}
+
+//ROAD WALKER DRIVE//
+encoderDrive(0.25, <plug here>, true, 10000, true);
+//ROAD WALKER ROTATE//
+rotateDude(speed:.5,<plug here>);

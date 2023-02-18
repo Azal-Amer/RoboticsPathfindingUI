@@ -14,6 +14,25 @@ weight = 3
 let globalRotate;
 let robotCodeArray = [];
 let pxInchesConstant;
+wholecode = "yay";
+let copyBtn;
+let myString = 'fsdf';
+
+// function updateOutput(wholecode) {
+//   console.log(wholecode)
+//   output.textContent = wholecode;
+// }
+// updateOutput('put somethng in idiot')
+// copyBtn.addEventListener("click", function() {
+//   const textarea = document.createElement("textarea");
+//   textarea.value = wholecode;
+//   document.body.appendChild(textarea);
+//   textarea.select();
+//   document.execCommand("copy");
+//   textarea.remove();
+// });
+// Set the string to be displayed in the output box
+
 function radians_to_degrees(radians)
 {
   var pi = Math.PI;
@@ -43,6 +62,10 @@ function outputVectorArray(linePoints,length){
             else{
                 rotationType = 'S'
             }
+            if(angle<0){
+              angle = 360+angle
+            }
+
             robotVectors.push([magnitude, angle,rotationType]);
         
             
@@ -55,9 +78,66 @@ function outputVectorArray(linePoints,length){
     
     return robotVectors
 }
-function printInstruction(){
+function convertGlobalAnglesToRelative(vectors) {
+  const result = [];
+  let prevAngle = 0; // start with zero angle
+  for (let i = 0; i < vectors.length; i++) {
+    const [magnitude, globalAngle] = vectors[i];
+    relativeAngle = globalAngle - prevAngle; // subtract previous angle from global angle
+    if(relativeAngle<0){
+      relativeAngle = 360+relativeAngle
+    }
+    prevAngle = globalAngle; // update previous angle
+    result.push([magnitude/pxInchesConstant, relativeAngle]);
+  }
+  return result;
+}
+function readFile(callback) {
+  fetch("encoderDrivefunction.txt")
+    .then(response => response.text())
+    .then(data => callback(data))
+    // .catch(error => console.error(error));
+}
 
-    setTimeout(()=>{console.log(robotCodeArray)},1000)
+function printInstruction(){
+    let relativeAngleVectors = [];
+
+    setTimeout(()=>{
+      relativeAngleVectors = convertGlobalAnglesToRelative(robotCodeArray)
+      readFile(function(contents) {
+        neededFunctions = contents.split('//ROAD WALKER DRIVE//')[0]
+        // contents = splitString(contents,'//ROAD WALKER ROTATE//')
+        drive = contents.split('//ROAD WALKER DRIVE//')[1].split('//ROAD WALKER ROTATE//')[0]
+        rotater = contents.split('//ROAD WALKER DRIVE//')[1].split('//ROAD WALKER ROTATE//')[1]
+        driveFunction = drive.split('<plug here>')
+        console.log(rotater)
+        rotater = rotater.split('<plug here>')
+        console.log('fdsafd')
+        // console.log(rotater[0]+rota)
+        wholecode = neededFunctions + "\n"
+        for(i=0;i<relativeAngleVectors.length;i++){
+          drive = driveFunction[0]+relativeAngleVectors[i][0] + driveFunction[1]
+          rotatey = rotater[0]+String(relativeAngleVectors[i][1])+rotater[1]
+          
+          if(i==0){
+            angleCode = "//Starting angle is at ", relativeAngleVectors[i][1]
+          }
+          else{
+            angleCode = rotatey
+          }
+          wholecode+=drive+"\n" + "//Path " + (i+1) +"\n"+angleCode
+          
+        }
+        console.log(wholecode)
+        // myString = wholecode
+
+        
+        
+      })
+      console.log(relativeAngleVectors)
+    },1000)
+    ;
+    // Okay from here we need to take relativeAngleVectors, and plug them into the code blocks, then display them.
 }
 function vectorConvert(pointArray) {
     let vectorArray = [];
@@ -116,6 +196,7 @@ function calculatePosition(points, t) {
     
 }
 function setup() {
+
     fieldImg = loadImage("field.png");
   canvas1 = createCanvas(600, 600);
     canvas1.parent("canvas-container")
@@ -183,7 +264,12 @@ function draw() {
     // rotate(rotate, angleMode = 'DEGREES')
     push();
     translate(pos[0].x , pos[0].y )
-    rotate(radians(pos[1]))
+    rotation = pos[1]
+    if(rotation<0){
+      rotation = 360+rotation
+    }
+    rotation = radians(rotation)
+    rotate(rotation)
 
     rect(-boxheight/2,-boxwidth/2, Number(boxheight), Number(boxwidth));
     fill(0)
